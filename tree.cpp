@@ -4,22 +4,20 @@ template <typename T>
 class alives_tree{
 	
 public:
-		alives_tree(std::vector<T> v)
-		: values(std::move(v)){
-			nodes.resize(values.size());
-			build(0,size(),0);
+		alives_tree(const std::vector<T>& v){
+			nodes.resize(2 * v.size());
+			build(0,v.size(),0,v);
 			update(0);
-			
 		}
 		
-		void build(int ini, int fin, int actual){
-			if(actual > size() || ini == fin){
+		void build(int ini, int fin, int actual,const std::vector<T>& values){
+			if(actual >= size() || ini == fin){
 				return;
 			}
 			int mid = ini + (fin - ini)/2;
 			nodes[actual] = {values[mid],true,0};
-			build(ini,mid,left_son(actual));
-			build(mid,fin,right_son(actual));
+			build(ini,mid,left_son(actual),values);
+			build(mid+1,fin,right_son(actual),values);
 		}
 		
 		int update(int actual){
@@ -30,8 +28,8 @@ public:
 			return nodes[actual].alives_behind + nodes[actual].alive;
 		}
 		
-		//Devuelve el k-esimo elemento vivo
-		T find(int i){
+		//Return the k-th element alive
+		T query(int i){
 			int res = recursive_find(0,i);
 			return nodes[res].value;
 		}
@@ -57,37 +55,41 @@ public:
 			
 		}
 		
-		// Mata al i-esimo elemento vivo
-		void kill(int i){
+		// Kill the i-th element alive
+		void erase(int i){
 			int index = recursive_find(0,i);
 			nodes[index].alive = false;
 			
-			int parent = (index - 1)/2;
-			while(nodes[parent].value != nodes[(parent - 1)/2].value){
-				nodes[parent].alives_behind -= 1;
-				parent = (parent - 1)/2;
+			if(index == 0){
+				return;
 			}
+			
+			int parent = std::floor((index - 1)/2);
+			while(parent != 0){
+				nodes[parent].alives_behind--;
+				parent = std::floor((parent - 1)/2);
+			}
+			nodes[0].alives_behind--;
+			
 		}
-		
 		int size( ) const {
 			return nodes.size();
 		}
 		
-		int left_son(int i){
+		int left_son(int& i){
 			return 2*i + 1;
 		}
 		
-		int right_son(int i){
+		int right_son(int& i){
 			return 2*i + 2;
 		}
 		
 private:
 	struct node{
 		T value;
-		bool alive = true;
+		bool alive = false;
 		int  alives_behind = 0;
 	};
-	std::vector<T>values;
 	std::vector<node>nodes;
 };
 
@@ -95,12 +97,16 @@ private:
 
 
 int main(){
-	std::vector<char> arr = {'a','b','c','d','e','f','g'};
-	alives_tree arbol(arr);
 	
-	std::cout<<arbol.find(3)<<"\n";  //Imprime c
-	arbol.kill(3); 
-	std::cout<<arbol.find(3)<<"\n"; // Imprime d
+	std::cin.tie(nullptr);
+	std::ios_base::sync_with_stdio(false);
 	
+	std::vector<char> arr = {'A','B','C','D','E'};
+	
+	alives_tree tree(arr);
+	
+	std::cout<<tree.query(2)<<"\n"; // Prints 'B'
+	tree.erase(2);
+	std::cout<<tree.query(2)<<"\n"; // Prints 'C'
 	
 }
